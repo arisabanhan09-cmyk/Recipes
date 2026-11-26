@@ -522,6 +522,71 @@
       border-top: 1px solid var(--border);
       margin-top: var(--space-5);
     }
+
+    /* Modal Styling */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(2px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-4);
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border);
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      padding: var(--space-5);
+    }
+
+    .modal-footer {
+      padding: var(--space-4) var(--space-5);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      background: var(--surface-alt);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
   </style>
 </head>
 <body>
@@ -571,9 +636,56 @@
     </div>
   </main>
 
+  <!-- Modal สำหรับตั้งค่า Firebase API แยกช่องกรอก -->
+  <div class="modal-backdrop" id="configModal" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="configModalTitle">ตั้งค่าการเชื่อมต่อ Firebase</h3>
+        <button type="button" class="btn-danger-ghost" id="btnCloseModal" title="ปิดหน้าต่าง">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin: 0 0 var(--space-4) 0; font-size: 13px; color: var(--muted);">
+          กรอกข้อมูล Firebase Configuration ที่ได้รับจากเมนู <strong>Project settings &gt; General &gt; Your apps</strong> บน Firebase Console
+        </p>
+        <div class="form-grid">
+          <div>
+            <label class="form-label" style="font-size: 13px;" for="cfgApiKey">API Key</label>
+            <input type="text" id="cfgApiKey" class="input" placeholder="AIzaSy...">
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 13px;" for="cfgAuthDomain">Auth Domain</label>
+            <input type="text" id="cfgAuthDomain" class="input" placeholder="project-id.firebaseapp.com">
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 13px;" for="cfgProjectId">Project ID *</label>
+            <input type="text" id="cfgProjectId" class="input" placeholder="project-id">
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 13px;" for="cfgStorageBucket">Storage Bucket</label>
+            <input type="text" id="cfgStorageBucket" class="input" placeholder="project-id.appspot.com">
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 13px;" for="cfgMessagingSenderId">Messaging Sender ID</label>
+            <input type="text" id="cfgMessagingSenderId" class="input" placeholder="1234567890">
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 13px;" for="cfgAppId">App ID</label>
+            <input type="text" id="cfgAppId" class="input" placeholder="1:1234567890:web:abcd1234">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnResetConfig">รีเซ็ตเป็น Local Storage</button>
+        <div style="display: flex; gap: var(--space-2);">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnCancelModal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnSaveConfig">บันทึกและเชื่อมต่อ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
-      // ค่าเริ่มต้น Firebase Config (สามารถใส่ค่าจาก Firebase Console ตรงนี้ หรือกดปุ่ม "ตั้งค่า Firebase" บนหน้าเว็บ)
       const DEFAULT_CONFIG = {
         apiKey: "",
         authDomain: "",
@@ -595,6 +707,20 @@
       const btnConfig = document.getElementById('btnConfig');
       const statusBanner = document.getElementById('statusBanner');
 
+      // Modal elements
+      const configModal = document.getElementById('configModal');
+      const btnCloseModal = document.getElementById('btnCloseModal');
+      const btnCancelModal = document.getElementById('btnCancelModal');
+      const btnSaveConfig = document.getElementById('btnSaveConfig');
+      const btnResetConfig = document.getElementById('btnResetConfig');
+
+      const cfgApiKey = document.getElementById('cfgApiKey');
+      const cfgAuthDomain = document.getElementById('cfgAuthDomain');
+      const cfgProjectId = document.getElementById('cfgProjectId');
+      const cfgStorageBucket = document.getElementById('cfgStorageBucket');
+      const cfgMessagingSenderId = document.getElementById('cfgMessagingSenderId');
+      const cfgAppId = document.getElementById('cfgAppId');
+
       function escapeHtml(str) {
         if (!str) return '';
         return String(str)
@@ -611,9 +737,13 @@
         statusBanner.style.display = 'block';
       }
 
-      function initStorage() {
+      function getConfig() {
         const stored = localStorage.getItem('recipe_firebase_config');
-        const config = stored ? JSON.parse(stored) : DEFAULT_CONFIG;
+        return stored ? JSON.parse(stored) : DEFAULT_CONFIG;
+      }
+
+      function initStorage() {
+        const config = getConfig();
 
         if (config.apiKey && config.projectId) {
           try {
@@ -621,7 +751,7 @@
               firebase.initializeApp(config);
             }
             db = firebase.firestore();
-            showStatus('เชื่อมต่อฐานข้อมูล Firebase Firestore แบบ Realtime สำเร็จ', 'success');
+            showStatus('เชื่อมต่อฐานข้อมูล Firebase Firestore Cloud สำเร็จ (Realtime Sync)', 'success');
             listenToDatabase();
           } catch (err) {
             showStatus('เชื่อมต่อ Firebase ไม่สำเร็จ: ' + err.message + ' (กำลังใช้งานโหมด Local Storage)', 'error');
@@ -657,7 +787,7 @@
           renderMenuList();
           renderMainPanel();
         }, (err) => {
-          showStatus('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message, 'error');
+          showStatus('เกิดข้อผิดพลาดในการโหลดข้อมูลจาก Firestore: ' + err.message, 'error');
         });
       }
 
@@ -993,17 +1123,57 @@
         menuNameInput.focus();
       }
 
-      btnConfig.addEventListener('click', function () {
-        const current = localStorage.getItem('recipe_firebase_config') || '{}';
-        const input = prompt('กรอก Firebase Configuration Object (JSON format):\nตัวอย่าง: {"apiKey":"...","projectId":"..."}', current);
-        if (input !== null) {
-          try {
-            const parsed = JSON.parse(input);
-            localStorage.setItem('recipe_firebase_config', JSON.stringify(parsed));
-            location.reload();
-          } catch (e) {
-            alert('รูปแบบ JSON ไม่ถูกต้อง กรุณาตรวจสอบปีกกาและเครื่องหมายคำพูด');
-          }
+      // Modal Handlers
+      function openConfigModal() {
+        const current = getConfig();
+        cfgApiKey.value = current.apiKey || '';
+        cfgAuthDomain.value = current.authDomain || '';
+        cfgProjectId.value = current.projectId || '';
+        cfgStorageBucket.value = current.storageBucket || '';
+        cfgMessagingSenderId.value = current.messagingSenderId || '';
+        cfgAppId.value = current.appId || '';
+        configModal.classList.add('open');
+      }
+
+      function closeConfigModal() {
+        configModal.classList.remove('open');
+      }
+
+      btnConfig.addEventListener('click', openConfigModal);
+      btnCloseModal.addEventListener('click', closeConfigModal);
+      btnCancelModal.addEventListener('click', closeConfigModal);
+
+      btnSaveConfig.addEventListener('click', function () {
+        const newConfig = {
+          apiKey: cfgApiKey.value.trim(),
+          authDomain: cfgAuthDomain.value.trim(),
+          projectId: cfgProjectId.value.trim(),
+          storageBucket: cfgStorageBucket.value.trim(),
+          messagingSenderId: cfgMessagingSenderId.value.trim(),
+          appId: cfgAppId.value.trim()
+        };
+
+        if (!newConfig.projectId || !newConfig.apiKey) {
+          alert('กรุณาระบุอย่างน้อย API Key และ Project ID เพื่อเชื่อมต่อ Firebase');
+          return;
+        }
+
+        localStorage.setItem('recipe_firebase_config', JSON.stringify(newConfig));
+        closeConfigModal();
+        location.reload();
+      });
+
+      btnResetConfig.addEventListener('click', function () {
+        if (confirm('คุณต้องการรีเซ็ตการเชื่อมต่อและกลับไปใช้ Local Storage ในเครื่องหรือไม่?')) {
+          localStorage.removeItem('recipe_firebase_config');
+          closeConfigModal();
+          location.reload();
+        }
+      });
+
+      configModal.addEventListener('click', function (e) {
+        if (e.target === configModal) {
+          closeConfigModal();
         }
       });
 
