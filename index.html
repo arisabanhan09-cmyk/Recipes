@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>สูตรอาหารและการใช้วัตถุดิบ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase App & Firestore SDKs (v10 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --bg: #f8f7f4;
+      --surface: #ffffff;
+      --surface-alt: #f3f1ed;
+      --border: #e4e1db;
+      --ink: #1e2022;
+      --muted: #646970;
+      --brand: #c85a32;
+      --brand-hover: #b04b25;
+      --brand-soft: #fdf3ef;
+      --brand-ink: #ffffff;
+      --accent: #2d6a4f;
+      --danger: #dc2626;
+      --danger-soft: #fef2f2;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(24, 24, 27, 0.06), 0 1px 2px rgba(24, 24, 27, 0.04);
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --font: 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: var(--space-4) var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .app-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .app-subtitle {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    /* Container & Layout */
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: var(--space-6);
+    }
+
+    .status-banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .status-banner.error {
+      background: var(--danger-soft);
+      border-color: #fecaca;
+      color: var(--danger);
+    }
+
+    .status-banner.success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: var(--accent);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    @media (min-width: 820px) {
+      .workspace {
+        grid-template-columns: 340px 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: var(--space-5);
+    }
+
+    /* Buttons */
+    .btn {
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: var(--brand-ink);
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-hover);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--ink);
+      border-color: var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-alt);
+    }
+
+    .btn-danger-ghost {
+      background: transparent;
+      color: var(--danger);
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+
+    .btn-danger-ghost:hover {
+      background: var(--danger-soft);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    /* Menu List */
+    .menu-list {
+      list-style: none;
+      margin: 0;
+      padding: var(--space-2);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .menu-item-btn {
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: var(--space-3) var(--space-4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      color: var(--ink);
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .menu-item-btn:hover {
+      background: var(--surface-alt);
+    }
+
+    .menu-item-btn:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: -2px;
+    }
+
+    .menu-item-btn.active {
+      background: var(--brand-soft);
+      border-color: #f3d2c5;
+      color: var(--brand);
+      font-weight: 600;
+    }
+
+    .menu-item-name {
+      font-size: 15px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .menu-item-arrow {
+      color: var(--muted);
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+
+    .menu-item-btn.active .menu-item-arrow {
+      color: var(--brand);
+      opacity: 1;
+    }
+
+    /* Empty States */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-8) var(--space-5);
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--surface-alt);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-3);
+    }
+
+    .empty-title {
+      margin: 0 0 var(--space-1) 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .empty-desc {
+      margin: 0 0 var(--space-4) 0;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* Detail View */
+    .recipe-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding-bottom: var(--space-4);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: var(--space-5);
+      flex-wrap: wrap;
+    }
+
+    .recipe-title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .recipe-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .section-label {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 var(--space-3) 0;
+      color: var(--ink);
+    }
+
+    /* Table */
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+
+    .ingredient-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .ingredient-table th,
+    .ingredient-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ingredient-table th {
+      background: var(--surface-alt);
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .ingredient-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ingredient-table tbody tr:hover {
+      background: #faf9f7;
+    }
+
+    .ingredient-table .num-col {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: var(--space-5);
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+      color: var(--ink);
+    }
+
+    .input {
+      width: 100%;
+      font: inherit;
+      font-size: 14px;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(200, 90, 50, 0.14);
+    }
+
+    .input.input-error {
+      border-color: var(--danger);
+    }
+
+    .error-msg {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: var(--space-2);
+      display: none;
+    }
+
+    .error-msg.visible {
+      display: block;
+    }
+
+    .ing-rows-header {
+      display: none;
+      grid-template-columns: 1fr 150px 150px 40px;
+      gap: var(--space-2);
+      padding-bottom: var(--space-2);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    @media (min-width: 640px) {
+      .ing-rows-header {
+        display: grid;
+      }
+    }
+
+    .ing-rows-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .ing-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-2);
+      padding: var(--space-3);
+      background: var(--surface-alt);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    @media (min-width: 640px) {
+      .ing-row {
+        grid-template-columns: 1fr 150px 150px 40px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+      }
+    }
+
+    .remove-row-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 38px;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .remove-row-btn:hover {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-color: #fecaca;
+    }
+
+    .form-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--space-3);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border);
+      margin-top: var(--space-5);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-group">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+            <path d="M7 2v20"></path>
+            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="app-title">สูตรอาหารและการใช้วัตถุดิบ</h1>
+          <p class="app-subtitle">จัดการรายการเมนู ตรวจสอบน้ำหนัก และปริมาณวัตถุดิบ (Firebase Cloud Ready)</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-secondary btn-sm" id="btnConfig">ตั้งค่า Firebase</button>
+        <button type="button" class="btn btn-primary" id="btnAddMenuHeader">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          เพิ่มเมนูใหม่
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="statusBanner" class="status-banner" style="display:none;"></div>
+
+    <div class="workspace">
+      <!-- คอลัมน์ซ้าย: รายการเมนูอาหาร -->
+      <section class="card" aria-labelledby="menuListHeading">
+        <div class="card-header">
+          <h2 class="card-title" id="menuListHeading">รายการเมนูอาหาร</h2>
+        </div>
+        <div id="menuListContainer"></div>
+      </section>
+
+      <!-- คอลัมน์ขวา: รายละเอียดวัตถุดิบ หรือ ฟอร์มจัดการ -->
+      <section class="card" id="mainPanel" aria-live="polite"></section>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      // ค่าเริ่มต้น Firebase Config (สามารถใส่ค่าจาก Firebase Console ตรงนี้ หรือกดปุ่ม "ตั้งค่า Firebase" บนหน้าเว็บ)
+      const DEFAULT_CONFIG = {
+        apiKey: "",
+        authDomain: "",
+        projectId: "",
+        storageBucket: "",
+        messagingSenderId: "",
+        appId: ""
+      };
+
+      let db = null;
+      let menus = [];
+      let selectedMenuId = null;
+      let viewMode = 'detail'; // 'detail' | 'form'
+      let editingMenuId = null;
+
+      const menuListContainer = document.getElementById('menuListContainer');
+      const mainPanel = document.getElementById('mainPanel');
+      const btnAddMenuHeader = document.getElementById('btnAddMenuHeader');
+      const btnConfig = document.getElementById('btnConfig');
+      const statusBanner = document.getElementById('statusBanner');
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function showStatus(message, type = 'info') {
+        statusBanner.textContent = message;
+        statusBanner.className = 'status-banner' + (type === 'error' ? ' error' : (type === 'success' ? ' success' : ''));
+        statusBanner.style.display = 'block';
+      }
+
+      function initStorage() {
+        const stored = localStorage.getItem('recipe_firebase_config');
+        const config = stored ? JSON.parse(stored) : DEFAULT_CONFIG;
+
+        if (config.apiKey && config.projectId) {
+          try {
+            if (!firebase.apps.length) {
+              firebase.initializeApp(config);
+            }
+            db = firebase.firestore();
+            showStatus('เชื่อมต่อฐานข้อมูล Firebase Firestore แบบ Realtime สำเร็จ', 'success');
+            listenToDatabase();
+          } catch (err) {
+            showStatus('เชื่อมต่อ Firebase ไม่สำเร็จ: ' + err.message + ' (กำลังใช้งานโหมด Local Storage)', 'error');
+            initLocalStorageFallback();
+          }
+        } else {
+          showStatus('กำลังใช้งานโหมด Local Storage ในเครื่อง (กดปุ่ม "ตั้งค่า Firebase" เพื่อต่อ Database Cloud)');
+          initLocalStorageFallback();
+        }
+      }
+
+      function initLocalStorageFallback() {
+        db = null;
+        const local = localStorage.getItem('local_recipe_menus');
+        menus = local ? JSON.parse(local) : [];
+        if (menus.length > 0 && !selectedMenuId) {
+          selectedMenuId = menus[0].id;
+        }
+        renderMenuList();
+        renderMainPanel();
+      }
+
+      function listenToDatabase() {
+        if (!db) return;
+        db.collection('recipes').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+          menus = [];
+          snapshot.forEach(doc => {
+            menus.push({ id: doc.id, ...doc.data() });
+          });
+          if (menus.length > 0 && !selectedMenuId) {
+            selectedMenuId = menus[0].id;
+          }
+          renderMenuList();
+          renderMainPanel();
+        }, (err) => {
+          showStatus('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message, 'error');
+        });
+      }
+
+      function saveMenuRecord(menuData, menuId = null) {
+        if (db) {
+          if (menuId) {
+            return db.collection('recipes').doc(menuId).update({
+              name: menuData.name,
+              ingredients: menuData.ingredients,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          } else {
+            return db.collection('recipes').add({
+              name: menuData.name,
+              ingredients: menuData.ingredients,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        } else {
+          if (menuId) {
+            const idx = menus.findIndex(m => m.id === menuId);
+            if (idx !== -1) menus[idx] = { id: menuId, ...menuData };
+            selectedMenuId = menuId;
+          } else {
+            const newMenu = { id: 'local_' + Date.now(), ...menuData };
+            menus.unshift(newMenu);
+            selectedMenuId = newMenu.id;
+          }
+          localStorage.setItem('local_recipe_menus', JSON.stringify(menus));
+          renderMenuList();
+          renderMainPanel();
+          return Promise.resolve();
+        }
+      }
+
+      function deleteMenuRecord(menuId) {
+        if (db) {
+          return db.collection('recipes').doc(menuId).delete();
+        } else {
+          menus = menus.filter(m => m.id !== menuId);
+          localStorage.setItem('local_recipe_menus', JSON.stringify(menus));
+          selectedMenuId = menus.length > 0 ? menus[0].id : null;
+          renderMenuList();
+          renderMainPanel();
+          return Promise.resolve();
+        }
+      }
+
+      function openCreateForm() {
+        viewMode = 'form';
+        editingMenuId = null;
+        renderMenuList();
+        renderMainPanel();
+      }
+
+      function openEditForm(menuId) {
+        viewMode = 'form';
+        editingMenuId = menuId;
+        renderMenuList();
+        renderMainPanel();
+      }
+
+      function selectMenu(menuId) {
+        selectedMenuId = menuId;
+        viewMode = 'detail';
+        editingMenuId = null;
+        renderMenuList();
+        renderMainPanel();
+      }
+
+      function renderMenuList() {
+        if (menus.length === 0) {
+          menuListContainer.innerHTML =
+            '<div class="empty-state">' +
+              '<div class="empty-icon" aria-hidden="true">' +
+                '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                  '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>' +
+                '</svg>' +
+              '</div>' +
+              '<p class="empty-title">ยังไม่มีรายการเมนู</p>' +
+              '<p class="empty-desc">เริ่มต้นด้วยการเพิ่มเมนูอาหารและระบุวัตถุดิบที่ใช้</p>' +
+              '<button type="button" class="btn btn-secondary btn-sm" id="btnEmptyAddMenu">+ เพิ่มเมนูแรก</button>' +
+            '</div>';
+
+          const btnEmptyAdd = document.getElementById('btnEmptyAddMenu');
+          if (btnEmptyAdd) {
+            btnEmptyAdd.addEventListener('click', openCreateForm);
+          }
+          return;
+        }
+
+        let listHtml = '<ul class="menu-list">';
+        menus.forEach(function (menu) {
+          const isActive = (viewMode === 'detail' && menu.id === selectedMenuId) ||
+                           (viewMode === 'form' && menu.id === editingMenuId);
+          listHtml +=
+            '<li>' +
+              '<button type="button" class="menu-item-btn ' + (isActive ? 'active' : '') + '" data-menu-id="' + escapeHtml(menu.id) + '">' +
+                '<span class="menu-item-name">' + escapeHtml(menu.name) + '</span>' +
+                '<svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                  '<polyline points="9 18 15 12 9 6"></polyline>' +
+                '</svg>' +
+              '</button>' +
+            '</li>';
+        });
+        listHtml += '</ul>';
+        menuListContainer.innerHTML = listHtml;
+
+        menuListContainer.querySelectorAll('.menu-item-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            selectMenu(btn.getAttribute('data-menu-id'));
+          });
+        });
+      }
+
+      function renderMainPanel() {
+        if (viewMode === 'form') {
+          renderFormPanel();
+          return;
+        }
+
+        const currentMenu = menus.find(function (m) { return m.id === selectedMenuId; });
+
+        if (!currentMenu) {
+          mainPanel.innerHTML =
+            '<div class="empty-state">' +
+              '<div class="empty-icon" aria-hidden="true">' +
+                '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                  '<circle cx="12" cy="12" r="10"></circle>' +
+                  '<line x1="12" y1="8" x2="12" y2="12"></line>' +
+                  '<line x1="12" y1="16" x2="12.01" y2="16"></line>' +
+                '</svg>' +
+              '</div>' +
+              '<p class="empty-title">เลือกเมนูอาหารเพื่อดูรายละเอียดวัตถุดิบ</p>' +
+              '<p class="empty-desc">กดที่รายการเมนูทางด้านซ้าย หรือเพิ่มเมนูอาหารใหม่เพื่อบันทึกน้ำหนักและปริมาณวัตถุดิบ</p>' +
+              '<button type="button" class="btn btn-primary" id="btnDetailEmptyAdd">+ เพิ่มเมนูใหม่</button>' +
+            '</div>';
+
+          const btnDetailEmptyAdd = document.getElementById('btnDetailEmptyAdd');
+          if (btnDetailEmptyAdd) {
+            btnDetailEmptyAdd.addEventListener('click', openCreateForm);
+          }
+          return;
+        }
+
+        let rowsHtml = '';
+        (currentMenu.ingredients || []).forEach(function (ing) {
+          rowsHtml +=
+            '<tr>' +
+              '<td>' + escapeHtml(ing.name) + '</td>' +
+              '<td class="num-col">' + escapeHtml(ing.weight || '-') + '</td>' +
+              '<td class="num-col">' + escapeHtml(ing.quantity || '-') + '</td>' +
+            '</tr>';
+        });
+
+        mainPanel.innerHTML =
+          '<div class="card-body">' +
+            '<div class="recipe-header">' +
+              '<h2 class="recipe-title">' + escapeHtml(currentMenu.name) + '</h2>' +
+              '<div class="recipe-actions">' +
+                '<button type="button" class="btn btn-secondary btn-sm" id="btnEditRecipe">แก้ไขเมนู</button>' +
+                '<button type="button" class="btn btn-danger-ghost" id="btnDeleteRecipe">ลบเมนู</button>' +
+              '</div>' +
+            '</div>' +
+            '<h3 class="section-label">วัตถุดิบที่ต้องใช้ในเมนู</h3>' +
+            '<div class="table-wrapper">' +
+              '<table class="ingredient-table">' +
+                '<thead>' +
+                  '<tr>' +
+                    '<th>รายการวัตถุดิบ</th>' +
+                    '<th class="num-col">น้ำหนัก</th>' +
+                    '<th class="num-col">ปริมาณ</th>' +
+                  '</tr>' +
+                '</thead>' +
+                '<tbody>' +
+                  rowsHtml +
+                '</tbody>' +
+              '</table>' +
+            '</div>' +
+          '</div>';
+
+        document.getElementById('btnEditRecipe').addEventListener('click', function () {
+          openEditForm(currentMenu.id);
+        });
+
+        document.getElementById('btnDeleteRecipe').addEventListener('click', function () {
+          if (confirm('คุณต้องการลบเมนู "' + currentMenu.name + '" ใช่หรือไม่?')) {
+            deleteMenuRecord(currentMenu.id);
+          }
+        });
+      }
+
+      function renderFormPanel() {
+        const editingMenu = editingMenuId
+          ? menus.find(function (m) { return m.id === editingMenuId; })
+          : null;
+
+        const initialName = editingMenu ? editingMenu.name : '';
+        const initialIngredients = editingMenu && editingMenu.ingredients && editingMenu.ingredients.length > 0
+          ? editingMenu.ingredients.map(function (i) {
+              return { name: i.name, weight: i.weight, quantity: i.quantity };
+            })
+          : [{ name: '', weight: '', quantity: '' }];
+
+        mainPanel.innerHTML =
+          '<div class="card-header">' +
+            '<h2 class="card-title">' + (editingMenu ? 'แก้ไขเมนูอาหาร' : 'เพิ่มเมนูอาหารใหม่') + '</h2>' +
+          '</div>' +
+          '<div class="card-body">' +
+            '<form id="recipeForm" novalidate>' +
+              '<div class="form-group">' +
+                '<label class="form-label" for="menuNameInput">ชื่อเมนูอาหาร</label>' +
+                '<input type="text" id="menuNameInput" class="input" placeholder="เช่น ข้าวผัดกะเพราไก่, ต้มยำกุ้ง" value="' + escapeHtml(initialName) + '" required>' +
+                '<div class="error-msg" id="menuNameError">กรุณาระบุชื่อเมนูอาหาร</div>' +
+              '</div>' +
+              '<div class="form-group">' +
+                '<label class="form-label">รายการวัตถุดิบ น้ำหนัก และปริมาณ</label>' +
+                '<div class="ing-rows-header">' +
+                  '<span>ชื่อวัตถุดิบ</span>' +
+                  '<span>น้ำหนัก (เช่น 200 กรัม)</span>' +
+                  '<span>ปริมาณ (เช่น 2 ช้อนโต๊ะ)</span>' +
+                  '<span></span>' +
+                '</div>' +
+                '<div class="ing-rows-container" id="ingRowsContainer"></div>' +
+                '<div class="error-msg" id="ingRowsError">กรุณาระบุวัตถุดิบอย่างน้อย 1 รายการ (ต้องใส่ชื่อวัตถุดิบ และน้ำหนักหรือปริมาณ)</div>' +
+                '<button type="button" class="btn btn-secondary btn-sm" id="btnAddIngredientRow">+ เพิ่มรายการวัตถุดิบ</button>' +
+              '</div>' +
+              '<div class="form-footer">' +
+                '<button type="button" class="btn btn-secondary" id="btnCancelForm">ยกเลิก</button>' +
+                '<button type="submit" class="btn btn-primary">บันทึกเมนู</button>' +
+              '</div>' +
+            '</form>' +
+          '</div>';
+
+        const ingRowsContainer = document.getElementById('ingRowsContainer');
+        const btnAddIngredientRow = document.getElementById('btnAddIngredientRow');
+        const btnCancelForm = document.getElementById('btnCancelForm');
+        const recipeForm = document.getElementById('recipeForm');
+        const menuNameInput = document.getElementById('menuNameInput');
+        const menuNameError = document.getElementById('menuNameError');
+        const ingRowsError = document.getElementById('ingRowsError');
+
+        function addIngredientRowElement(item) {
+          const row = document.createElement('div');
+          row.className = 'ing-row';
+          row.innerHTML =
+            '<input type="text" class="input ing-name" placeholder="ชื่อวัตถุดิบ (เช่น เนื้อไก่)" aria-label="ชื่อวัตถุดิบ" value="' + escapeHtml(item.name) + '">' +
+            '<input type="text" class="input ing-weight" placeholder="น้ำหนัก (เช่น 150 กรัม)" aria-label="น้ำหนัก" value="' + escapeHtml(item.weight) + '">' +
+            '<input type="text" class="input ing-qty" placeholder="ปริมาณ (เช่น 1 ถ้วย)" aria-label="ปริมาณ" value="' + escapeHtml(item.quantity) + '">' +
+            '<button type="button" class="remove-row-btn" title="ลบวัตถุดิบนี้" aria-label="ลบวัตถุดิบนี้">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                '<line x1="18" y1="6" x2="6" y2="18"></line>' +
+                '<line x1="6" y1="6" x2="18" y2="18"></line>' +
+              '</svg>' +
+            '</button>';
+
+          const removeBtn = row.querySelector('.remove-row-btn');
+          removeBtn.addEventListener('click', function () {
+            if (ingRowsContainer.children.length > 1) {
+              row.remove();
+            } else {
+              row.querySelector('.ing-name').value = '';
+              row.querySelector('.ing-weight').value = '';
+              row.querySelector('.ing-qty').value = '';
+            }
+          });
+
+          ingRowsContainer.appendChild(row);
+        }
+
+        initialIngredients.forEach(function (ing) {
+          addIngredientRowElement(ing);
+        });
+
+        btnAddIngredientRow.addEventListener('click', function () {
+          addIngredientRowElement({ name: '', weight: '', quantity: '' });
+        });
+
+        btnCancelForm.addEventListener('click', function () {
+          viewMode = 'detail';
+          editingMenuId = null;
+          renderMenuList();
+          renderMainPanel();
+        });
+
+        recipeForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          menuNameError.classList.remove('visible');
+          menuNameInput.classList.remove('input-error');
+          ingRowsError.classList.remove('visible');
+
+          const menuName = menuNameInput.value.trim();
+          let valid = true;
+
+          if (!menuName) {
+            menuNameError.classList.add('visible');
+            menuNameInput.classList.add('input-error');
+            valid = false;
+          }
+
+          const rowElements = ingRowsContainer.querySelectorAll('.ing-row');
+          const collectedIngredients = [];
+
+          rowElements.forEach(function (rowEl) {
+            const nameVal = rowEl.querySelector('.ing-name').value.trim();
+            const weightVal = rowEl.querySelector('.ing-weight').value.trim();
+            const qtyVal = rowEl.querySelector('.ing-qty').value.trim();
+
+            if (nameVal && (weightVal || qtyVal)) {
+              collectedIngredients.push({
+                name: nameVal,
+                weight: weightVal,
+                quantity: qtyVal
+              });
+            }
+          });
+
+          if (collectedIngredients.length === 0) {
+            ingRowsError.classList.add('visible');
+            valid = false;
+          }
+
+          if (!valid) return;
+
+          saveMenuRecord({ name: menuName, ingredients: collectedIngredients }, editingMenuId).then(function () {
+            viewMode = 'detail';
+            editingMenuId = null;
+            renderMenuList();
+            renderMainPanel();
+          });
+        });
+
+        menuNameInput.focus();
+      }
+
+      btnConfig.addEventListener('click', function () {
+        const current = localStorage.getItem('recipe_firebase_config') || '{}';
+        const input = prompt('กรอก Firebase Configuration Object (JSON format):\nตัวอย่าง: {"apiKey":"...","projectId":"..."}', current);
+        if (input !== null) {
+          try {
+            const parsed = JSON.parse(input);
+            localStorage.setItem('recipe_firebase_config', JSON.stringify(parsed));
+            location.reload();
+          } catch (e) {
+            alert('รูปแบบ JSON ไม่ถูกต้อง กรุณาตรวจสอบปีกกาและเครื่องหมายคำพูด');
+          }
+        }
+      });
+
+      btnAddMenuHeader.addEventListener('click', openCreateForm);
+
+      // เริ่มต้นระบบ
+      initStorage();
+    })();
+  </script>
+</body>
+</html>
