@@ -183,6 +183,51 @@
       padding: var(--space-5);
     }
 
+    /* Search Box */
+    .search-box-wrapper {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-alt);
+    }
+
+    .search-input-inner {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-inner svg {
+      position: absolute;
+      left: 12px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      padding-left: 38px !important;
+      padding-right: 30px !important;
+      font-size: 13px !important;
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .search-clear-btn:hover {
+      color: var(--ink);
+    }
+
     /* Buttons */
     .btn {
       font: inherit;
@@ -248,6 +293,8 @@
       display: flex;
       flex-direction: column;
       gap: var(--space-1);
+      max-height: calc(100vh - 280px);
+      overflow-y: auto;
     }
 
     .menu-item-btn {
@@ -362,6 +409,15 @@
       font-weight: 600;
       margin: 0 0 var(--space-3) 0;
       color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-hint {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--muted);
     }
 
     /* Table */
@@ -403,6 +459,13 @@
       text-align: right;
       font-variant-numeric: tabular-nums;
       font-weight: 500;
+    }
+
+    .ingredient-table .order-col {
+      width: 48px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
     }
 
     /* Forms */
@@ -453,7 +516,7 @@
 
     .ing-rows-header {
       display: none;
-      grid-template-columns: 1fr 150px 150px 40px;
+      grid-template-columns: 1fr 140px 140px 100px;
       gap: var(--space-2);
       padding-bottom: var(--space-2);
       font-size: 13px;
@@ -482,11 +545,13 @@
       background: var(--surface-alt);
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
+      align-items: center;
+      transition: background-color 0.15s ease;
     }
 
     @media (min-width: 640px) {
       .ing-row {
-        grid-template-columns: 1fr 150px 150px 40px;
+        grid-template-columns: 1fr 140px 140px 100px;
         padding: 0;
         background: transparent;
         border: none;
@@ -494,22 +559,45 @@
       }
     }
 
-    .remove-row-btn {
-      background: transparent;
+    .row-actions-group {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--space-1);
+    }
+
+    .action-icon-btn {
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      color: var(--muted);
+      color: var(--ink);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      width: 32px;
       height: 38px;
-      transition: background-color 0.15s ease, color 0.15s ease;
+      font-size: 12px;
+      padding: 0;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .action-icon-btn:hover:not(:disabled) {
+      background: var(--surface-alt);
+      border-color: #cbd5e1;
+    }
+
+    .action-icon-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .remove-row-btn {
+      color: var(--danger);
     }
 
     .remove-row-btn:hover {
       background: var(--danger-soft);
-      color: var(--danger);
       border-color: #fecaca;
     }
 
@@ -603,7 +691,7 @@
         </div>
         <div>
           <h1 class="app-title">สูตรอาหารและการใช้วัตถุดิบ</h1>
-          <p class="app-subtitle">จัดการรายการเมนู ตรวจสอบน้ำหนัก และปริมาณวัตถุดิบ (Cloud Firestore Sync)</p>
+          <p class="app-subtitle">จัดการเมนู ค้นหา จัดเรียงวัตถุดิบ (Cloud Firestore Real-time Sync)</p>
         </div>
       </div>
       <div class="header-actions">
@@ -623,10 +711,21 @@
     <div id="statusBanner" class="status-banner" style="display:none;"></div>
 
     <div class="workspace">
-      <!-- คอลัมน์ซ้าย: รายการเมนูอาหาร -->
+      <!-- คอลัมน์ซ้าย: รายการเมนูอาหาร + กล่องค้นหา -->
       <section class="card" aria-labelledby="menuListHeading">
         <div class="card-header">
           <h2 class="card-title" id="menuListHeading">รายการเมนูอาหาร</h2>
+          <span id="menuCountBadge" style="font-size: 12px; color: var(--muted); font-weight: 500;">0 เมนู</span>
+        </div>
+        <div class="search-box-wrapper">
+          <div class="search-input-inner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="search" id="menuSearchInput" class="input search-input" placeholder="พิมพ์ค้นหาชื่อเมนูอาหาร..." aria-label="พิมพ์ค้นหาชื่อเมนูอาหาร">
+            <button type="button" id="btnClearSearch" class="search-clear-btn" title="ล้างคำค้นหา" aria-label="ล้างคำค้นหา">✕</button>
+          </div>
         </div>
         <div id="menuListContainer"></div>
       </section>
@@ -687,9 +786,8 @@
   <script>
     (function () {
       /**
-       * คำแนะนำสำคัญเพื่อให้ทุกเครื่องที่เปิดลิงก์เห็นข้อมูลตรงกัน:
-       * นำค่าคอนฟิกจาก Firebase Console มาใส่ใน BUILTIN_FIREBASE_CONFIG ด้านล่างนี้
-       * ก่อน Deploy ขึ้น Firebase Hosting เมื่อนำลิงก์ไปเปิดเครื่องอื่น ข้อมูลจะตรงกันทันที!
+       * ค่าคอนฟิกกลางจาก Firebase Console:
+       * ใส่ค่าจริงที่นี่ก่อน Deploy ขึ้น Firebase Hosting เพื่อให้ทุกเครื่องที่เปิดลิงก์เห็นข้อมูลตรงกันทันที!
        */
       const BUILTIN_FIREBASE_CONFIG = {
         apiKey: "AIzaSyAEwHZcOt1JLgUL2m-K1R9rggCxeiMHV_c",             // เช่น "AIzaSy..."
@@ -705,12 +803,16 @@
       let selectedMenuId = null;
       let viewMode = 'detail'; // 'detail' | 'form'
       let editingMenuId = null;
+      let searchQuery = '';
 
       const menuListContainer = document.getElementById('menuListContainer');
       const mainPanel = document.getElementById('mainPanel');
       const btnAddMenuHeader = document.getElementById('btnAddMenuHeader');
       const btnConfig = document.getElementById('btnConfig');
       const statusBanner = document.getElementById('statusBanner');
+      const menuSearchInput = document.getElementById('menuSearchInput');
+      const btnClearSearch = document.getElementById('btnClearSearch');
+      const menuCountBadge = document.getElementById('menuCountBadge');
 
       // Modal elements
       const configModal = document.getElementById('configModal');
@@ -869,7 +971,20 @@
         renderMainPanel();
       }
 
+      function getFilteredMenus() {
+        if (!searchQuery.trim()) return menus;
+        const q = searchQuery.trim().toLowerCase();
+        return menus.filter(m => {
+          const matchName = m.name && m.name.toLowerCase().includes(q);
+          const matchIngredient = Array.isArray(m.ingredients) && m.ingredients.some(ing => ing.name && ing.name.toLowerCase().includes(q));
+          return matchName || matchIngredient;
+        });
+      }
+
       function renderMenuList() {
+        const filtered = getFilteredMenus();
+        menuCountBadge.textContent = `${filtered.length} เมนู`;
+
         if (menus.length === 0) {
           menuListContainer.innerHTML =
             '<div class="empty-state">' +
@@ -890,8 +1005,17 @@
           return;
         }
 
+        if (filtered.length === 0) {
+          menuListContainer.innerHTML =
+            '<div class="empty-state" style="padding: var(--space-6) var(--space-4);">' +
+              '<p class="empty-title" style="font-size: 15px;">ไม่พบเมนูที่ค้นหา</p>' +
+              '<p class="empty-desc" style="font-size: 13px;">ลองค้นหาด้วยคำอื่น หรือกดล้างคำค้นหา</p>' +
+            '</div>';
+          return;
+        }
+
         let listHtml = '<ul class="menu-list">';
-        menus.forEach(function (menu) {
+        filtered.forEach(function (menu) {
           const isActive = (viewMode === 'detail' && menu.id === selectedMenuId) ||
                            (viewMode === 'form' && menu.id === editingMenuId);
           listHtml +=
@@ -945,10 +1069,11 @@
         }
 
         let rowsHtml = '';
-        (currentMenu.ingredients || []).forEach(function (ing) {
+        (currentMenu.ingredients || []).forEach(function (ing, index) {
           rowsHtml +=
             '<tr>' +
-              '<td>' + escapeHtml(ing.name) + '</td>' +
+              '<td class="order-col">' + (index + 1) + '</td>' +
+              '<td><strong>' + escapeHtml(ing.name) + '</strong></td>' +
               '<td class="num-col">' + escapeHtml(ing.weight || '-') + '</td>' +
               '<td class="num-col">' + escapeHtml(ing.quantity || '-') + '</td>' +
             '</tr>';
@@ -957,17 +1082,24 @@
         mainPanel.innerHTML =
           '<div class="card-body">' +
             '<div class="recipe-header">' +
-              '<h2 class="recipe-title">' + escapeHtml(currentMenu.name) + '</h2>' +
+              '<div>' +
+                '<h2 class="recipe-title">' + escapeHtml(currentMenu.name) + '</h2>' +
+                '<span style="font-size: 13px; color: var(--muted);">' + ((currentMenu.ingredients || []).length) + ' รายการวัตถุดิบ</span>' +
+              '</div>' +
               '<div class="recipe-actions">' +
-                '<button type="button" class="btn btn-secondary btn-sm" id="btnEditRecipe">แก้ไขเมนู</button>' +
+                '<button type="button" class="btn btn-secondary btn-sm" id="btnEditRecipe">แก้ไขเมนูและลำดับ</button>' +
                 '<button type="button" class="btn btn-danger-ghost" id="btnDeleteRecipe">ลบเมนู</button>' +
               '</div>' +
             '</div>' +
-            '<h3 class="section-label">วัตถุดิบที่ต้องใช้ในเมนู</h3>' +
+            '<div class="section-label">' +
+              '<span>วัตถุดิบที่ต้องใช้ในเมนู</span>' +
+              '<span class="section-hint">เรียงตามลำดับที่บันทึกไว้</span>' +
+            '</div>' +
             '<div class="table-wrapper">' +
               '<table class="ingredient-table">' +
                 '<thead>' +
                   '<tr>' +
+                    '<th class="order-col">#</th>' +
                     '<th>รายการวัตถุดิบ</th>' +
                     '<th class="num-col">น้ำหนัก</th>' +
                     '<th class="num-col">ปริมาณ</th>' +
@@ -988,6 +1120,16 @@
           if (confirm('คุณต้องการลบเมนู "' + currentMenu.name + '" ใช่หรือไม่?')) {
             deleteMenuRecord(currentMenu.id);
           }
+        });
+      }
+
+      function updateRowButtons(container) {
+        const rows = container.querySelectorAll('.ing-row');
+        rows.forEach(function (row, idx) {
+          const upBtn = row.querySelector('.move-up-btn');
+          const downBtn = row.querySelector('.move-down-btn');
+          if (upBtn) upBtn.disabled = (idx === 0);
+          if (downBtn) downBtn.disabled = (idx === rows.length - 1);
         });
       }
 
@@ -1015,12 +1157,15 @@
                 '<div class="error-msg" id="menuNameError">กรุณาระบุชื่อเมนูอาหาร</div>' +
               '</div>' +
               '<div class="form-group">' +
-                '<label class="form-label">รายการวัตถุดิบ น้ำหนัก และปริมาณ</label>' +
+                '<div class="section-label">' +
+                  '<span>รายการวัตถุดิบ น้ำหนัก และปริมาณ</span>' +
+                  '<span class="section-hint">กดปุ่ม ▲ ▼ เพื่อเลื่อนจัดเรียงลำดับวัตถุดิบได้เอง</span>' +
+                '</div>' +
                 '<div class="ing-rows-header">' +
                   '<span>ชื่อวัตถุดิบ</span>' +
                   '<span>น้ำหนัก (เช่น 200 กรัม)</span>' +
                   '<span>ปริมาณ (เช่น 2 ช้อนโต๊ะ)</span>' +
-                  '<span></span>' +
+                  '<span style="text-align: right;">ลำดับ / ลบ</span>' +
                 '</div>' +
                 '<div class="ing-rows-container" id="ingRowsContainer"></div>' +
                 '<div class="error-msg" id="ingRowsError">กรุณาระบุวัตถุดิบอย่างน้อย 1 รายการ (ต้องใส่ชื่อวัตถุดิบ และน้ำหนักหรือปริมาณ)</div>' +
@@ -1048,13 +1193,33 @@
             '<input type="text" class="input ing-name" placeholder="ชื่อวัตถุดิบ (เช่น เนื้อไก่)" aria-label="ชื่อวัตถุดิบ" value="' + escapeHtml(item.name) + '">' +
             '<input type="text" class="input ing-weight" placeholder="น้ำหนัก (เช่น 150 กรัม)" aria-label="น้ำหนัก" value="' + escapeHtml(item.weight) + '">' +
             '<input type="text" class="input ing-qty" placeholder="ปริมาณ (เช่น 1 ถ้วย)" aria-label="ปริมาณ" value="' + escapeHtml(item.quantity) + '">' +
-            '<button type="button" class="remove-row-btn" title="ลบวัตถุดิบนี้" aria-label="ลบวัตถุดิบนี้">' +
-              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-                '<line x1="18" y1="6" x2="6" y2="18"></line>' +
-                '<line x1="6" y1="6" x2="18" y2="18"></line>' +
-              '</svg>' +
-            '</button>';
+            '<div class="row-actions-group">' +
+              '<button type="button" class="action-icon-btn move-up-btn" title="เลื่อนขึ้น" aria-label="เลื่อนขึ้น">▲</button>' +
+              '<button type="button" class="action-icon-btn move-down-btn" title="เลื่อนลง" aria-label="เลื่อนลง">▼</button>' +
+              '<button type="button" class="action-icon-btn remove-row-btn" title="ลบวัตถุดิบนี้" aria-label="ลบวัตถุดิบนี้">✕</button>' +
+            '</div>';
 
+          // ปุ่มเลื่อนขึ้น
+          const upBtn = row.querySelector('.move-up-btn');
+          upBtn.addEventListener('click', function () {
+            const prev = row.previousElementSibling;
+            if (prev) {
+              ingRowsContainer.insertBefore(row, prev);
+              updateRowButtons(ingRowsContainer);
+            }
+          });
+
+          // ปุ่มเลื่อนลง
+          const downBtn = row.querySelector('.move-down-btn');
+          downBtn.addEventListener('click', function () {
+            const next = row.nextElementSibling;
+            if (next) {
+              ingRowsContainer.insertBefore(next, row);
+              updateRowButtons(ingRowsContainer);
+            }
+          });
+
+          // ปุ่มลบ
           const removeBtn = row.querySelector('.remove-row-btn');
           removeBtn.addEventListener('click', function () {
             if (ingRowsContainer.children.length > 1) {
@@ -1064,9 +1229,11 @@
               row.querySelector('.ing-weight').value = '';
               row.querySelector('.ing-qty').value = '';
             }
+            updateRowButtons(ingRowsContainer);
           });
 
           ingRowsContainer.appendChild(row);
+          updateRowButtons(ingRowsContainer);
         }
 
         initialIngredients.forEach(function (ing) {
@@ -1133,6 +1300,21 @@
 
         menuNameInput.focus();
       }
+
+      // ระบบค้นหาเมนู
+      menuSearchInput.addEventListener('input', function (e) {
+        searchQuery = e.target.value;
+        btnClearSearch.style.display = searchQuery ? 'inline-flex' : 'none';
+        renderMenuList();
+      });
+
+      btnClearSearch.addEventListener('click', function () {
+        menuSearchInput.value = '';
+        searchQuery = '';
+        btnClearSearch.style.display = 'none';
+        renderMenuList();
+        menuSearchInput.focus();
+      });
 
       // Modal Handlers
       function openConfigModal() {
