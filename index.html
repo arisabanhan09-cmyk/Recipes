@@ -603,7 +603,7 @@
         </div>
         <div>
           <h1 class="app-title">สูตรอาหารและการใช้วัตถุดิบ</h1>
-          <p class="app-subtitle">จัดการรายการเมนู ตรวจสอบน้ำหนัก และปริมาณวัตถุดิบ (Firebase Cloud Ready)</p>
+          <p class="app-subtitle">จัดการรายการเมนู ตรวจสอบน้ำหนัก และปริมาณวัตถุดิบ (Cloud Firestore Sync)</p>
         </div>
       </div>
       <div class="header-actions">
@@ -686,13 +686,18 @@
 
   <script>
     (function () {
-      const DEFAULT_CONFIG = {
-        apiKey: "",
-        authDomain: "",
-        projectId: "",
-        storageBucket: "",
-        messagingSenderId: "",
-        appId: ""
+      /**
+       * คำแนะนำสำคัญเพื่อให้ทุกเครื่องที่เปิดลิงก์เห็นข้อมูลตรงกัน:
+       * นำค่าคอนฟิกจาก Firebase Console มาใส่ใน BUILTIN_FIREBASE_CONFIG ด้านล่างนี้
+       * ก่อน Deploy ขึ้น Firebase Hosting เมื่อนำลิงก์ไปเปิดเครื่องอื่น ข้อมูลจะตรงกันทันที!
+       */
+      const BUILTIN_FIREBASE_CONFIG = {
+        apiKey: "AIzaSyAEwHZcOt1JLgUL2m-K1R9rggCxeiMHV_c",             // เช่น "AIzaSy..."
+        authDomain: "recipes-9bf8c.firebaseapp.com",         // เช่น "my-recipes.firebaseapp.com"
+        projectId: "recipes-9bf8c",          // เช่น "my-recipes"
+        storageBucket: "recipes-9bf8c.firebasestorage.app",      // เช่น "my-recipes.appspot.com"
+        messagingSenderId: "906965866428",  // เช่น "1234567890"
+        appId: "1:906965866428:web:f3d0d43ba3159bd925bdb9"               // เช่น "1:1234567890:web:abcdef"
       };
 
       let db = null;
@@ -737,13 +742,19 @@
         statusBanner.style.display = 'block';
       }
 
-      function getConfig() {
-        const stored = localStorage.getItem('recipe_firebase_config');
-        return stored ? JSON.parse(stored) : DEFAULT_CONFIG;
+      function getEffectiveConfig() {
+        const custom = localStorage.getItem('recipe_firebase_config');
+        if (custom) {
+          try {
+            const parsed = JSON.parse(custom);
+            if (parsed.apiKey && parsed.projectId) return parsed;
+          } catch (e) {}
+        }
+        return BUILTIN_FIREBASE_CONFIG;
       }
 
       function initStorage() {
-        const config = getConfig();
+        const config = getEffectiveConfig();
 
         if (config.apiKey && config.projectId) {
           try {
@@ -751,14 +762,14 @@
               firebase.initializeApp(config);
             }
             db = firebase.firestore();
-            showStatus('เชื่อมต่อฐานข้อมูล Firebase Firestore Cloud สำเร็จ (Realtime Sync)', 'success');
+            showStatus('เชื่อมต่อ Cloud Firestore เรียบร้อย (ข้อมูลซิงก์ตรงกันทุกอุปกรณ์แบบ Real-time)', 'success');
             listenToDatabase();
           } catch (err) {
-            showStatus('เชื่อมต่อ Firebase ไม่สำเร็จ: ' + err.message + ' (กำลังใช้งานโหมด Local Storage)', 'error');
+            showStatus('เชื่อมต่อ Firebase Cloud ไม่สำเร็จ: ' + err.message + ' (สลับไปใช้ Local Storage ในเครื่อง)', 'error');
             initLocalStorageFallback();
           }
         } else {
-          showStatus('กำลังใช้งานโหมด Local Storage ในเครื่อง (กดปุ่ม "ตั้งค่า Firebase" เพื่อต่อ Database Cloud)');
+          showStatus('กำลังใช้งานโหมด Local Storage ในเครื่อง (โปรดใส่ค่า Firebase Config ในโค้ดหรือกด "ตั้งค่า Firebase" เพื่อให้ทุกเครื่องเห็นข้อมูลเดียวกัน)');
           initLocalStorageFallback();
         }
       }
@@ -1125,7 +1136,7 @@
 
       // Modal Handlers
       function openConfigModal() {
-        const current = getConfig();
+        const current = getEffectiveConfig();
         cfgApiKey.value = current.apiKey || '';
         cfgAuthDomain.value = current.authDomain || '';
         cfgProjectId.value = current.projectId || '';
