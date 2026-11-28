@@ -14,6 +14,7 @@
 
   <style>
     :root {
+      /* Palette สีหลัก */
       --bg: #f8f7f4;
       --surface: #ffffff;
       --surface-alt: #f3f1ed;
@@ -269,6 +270,15 @@
       background: var(--surface-alt);
     }
 
+    .btn-accent {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-accent:hover {
+      background: #23533e;
+    }
+
     .btn-danger-ghost {
       background: transparent;
       color: var(--danger);
@@ -401,7 +411,9 @@
 
     .recipe-actions {
       display: flex;
+      align-items: center;
       gap: var(--space-2);
+      flex-wrap: wrap;
     }
 
     .section-label {
@@ -501,6 +513,12 @@
 
     .input.input-error {
       border-color: var(--danger);
+    }
+
+    textarea.input {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.6;
     }
 
     .error-msg {
@@ -642,6 +660,10 @@
       overflow-y: auto;
     }
 
+    .modal-card-lg {
+      max-width: 620px;
+    }
+
     .modal-header {
       padding: var(--space-4) var(--space-5);
       border-bottom: 1px solid var(--border);
@@ -675,6 +697,19 @@
       grid-template-columns: 1fr;
       gap: var(--space-3);
     }
+
+    .instructions-text-box {
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--ink);
+      background: var(--surface-alt);
+      padding: var(--space-4);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      max-height: 55vh;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
@@ -691,7 +726,7 @@
         </div>
         <div>
           <h1 class="app-title">สูตรอาหารและการใช้วัตถุดิบ</h1>
-          <p class="app-subtitle">จัดการเมนู ค้นหา จัดเรียงวัตถุดิบ (Cloud Firestore Real-time Sync)</p>
+          <p class="app-subtitle">จัดการเมนู ค้นหา จัดเรียงวัตถุดิบ พร้อมป๊อปอัปวิธีทำ (Cloud Real-time)</p>
         </div>
       </div>
       <div class="header-actions">
@@ -734,6 +769,23 @@
       <section class="card" id="mainPanel" aria-live="polite"></section>
     </div>
   </main>
+
+  <!-- Modal สำหรับแสดงวิธีทำ / ขั้นตอนการทำอาหาร (ป๊อปอัปเมื่อกดปุ่มดูวิธีทำ) -->
+  <div class="modal-backdrop" id="instructionsModal" role="dialog" aria-modal="true" aria-labelledby="instructionsModalTitle">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="instructionsModalTitle">📖 วิธีทำอาหาร</h3>
+        <button type="button" class="btn-danger-ghost" id="btnCloseInstructionsModal" title="ปิดหน้าต่าง">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="instructionsMenuName" style="font-weight: 600; font-size: 15px; margin: 0 0 var(--space-3) 0; color: var(--brand);"></p>
+        <div id="instructionsModalContent" class="instructions-text-box"></div>
+      </div>
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btnDismissInstructionsModal">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal สำหรับตั้งค่า Firebase API แยกช่องกรอก -->
   <div class="modal-backdrop" id="configModal" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
@@ -790,12 +842,12 @@
        * ใส่ค่าจริงที่นี่ก่อน Deploy ขึ้น Firebase Hosting เพื่อให้ทุกเครื่องที่เปิดลิงก์เห็นข้อมูลตรงกันทันที!
        */
       const BUILTIN_FIREBASE_CONFIG = {
-        apiKey: "AIzaSyAEwHZcOt1JLgUL2m-K1R9rggCxeiMHV_c",             // เช่น "AIzaSy..."
-        authDomain: "recipes-9bf8c.firebaseapp.com",         // เช่น "my-recipes.firebaseapp.com"
-        projectId: "recipes-9bf8c",          // เช่น "my-recipes"
-        storageBucket: "recipes-9bf8c.firebasestorage.app",      // เช่น "my-recipes.appspot.com"
-        messagingSenderId: "906965866428",  // เช่น "1234567890"
-        appId: "1:906965866428:web:f3d0d43ba3159bd925bdb9"               // เช่น "1:1234567890:web:abcdef"
+        apiKey: "",             // เช่น "AIzaSy..."
+        authDomain: "",         // เช่น "my-recipes.firebaseapp.com"
+        projectId: "",          // เช่น "my-recipes"
+        storageBucket: "",      // เช่น "my-recipes.appspot.com"
+        messagingSenderId: "",  // เช่น "1234567890"
+        appId: ""               // เช่น "1:1234567890:web:abcdef"
       };
 
       let db = null;
@@ -814,7 +866,7 @@
       const btnClearSearch = document.getElementById('btnClearSearch');
       const menuCountBadge = document.getElementById('menuCountBadge');
 
-      // Modal elements
+      // Modal Config Elements
       const configModal = document.getElementById('configModal');
       const btnCloseModal = document.getElementById('btnCloseModal');
       const btnCancelModal = document.getElementById('btnCancelModal');
@@ -827,6 +879,14 @@
       const cfgStorageBucket = document.getElementById('cfgStorageBucket');
       const cfgMessagingSenderId = document.getElementById('cfgMessagingSenderId');
       const cfgAppId = document.getElementById('cfgAppId');
+
+      // Modal Instructions Elements
+      const instructionsModal = document.getElementById('instructionsModal');
+      const instructionsModalTitle = document.getElementById('instructionsModalTitle');
+      const instructionsMenuName = document.getElementById('instructionsMenuName');
+      const instructionsModalContent = document.getElementById('instructionsModalContent');
+      const btnCloseInstructionsModal = document.getElementById('btnCloseInstructionsModal');
+      const btnDismissInstructionsModal = document.getElementById('btnDismissInstructionsModal');
 
       function escapeHtml(str) {
         if (!str) return '';
@@ -910,12 +970,14 @@
             return db.collection('recipes').doc(menuId).update({
               name: menuData.name,
               ingredients: menuData.ingredients,
+              instructions: menuData.instructions || '',
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
           } else {
             return db.collection('recipes').add({
               name: menuData.name,
               ingredients: menuData.ingredients,
+              instructions: menuData.instructions || '',
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
           }
@@ -1038,6 +1100,20 @@
         });
       }
 
+      function openInstructionsModal(menu) {
+        instructionsMenuName.textContent = 'เมนู: ' + menu.name;
+        if (menu.instructions && menu.instructions.trim()) {
+          instructionsModalContent.textContent = menu.instructions.trim();
+        } else {
+          instructionsModalContent.innerHTML = '<span style="color: var(--muted); font-style: italic;">เมนูนี้ยังไม่ได้ระบุขั้นตอนหรือวิธีทำไว้ สามารถกดปุ่ม "แก้ไขเมนู" เพื่อเพิ่มวิธีทำได้ค่ะ</span>';
+        }
+        instructionsModal.classList.add('open');
+      }
+
+      function closeInstructionsModal() {
+        instructionsModal.classList.remove('open');
+      }
+
       function renderMainPanel() {
         if (viewMode === 'form') {
           renderFormPanel();
@@ -1087,7 +1163,14 @@
                 '<span style="font-size: 13px; color: var(--muted);">' + ((currentMenu.ingredients || []).length) + ' รายการวัตถุดิบ</span>' +
               '</div>' +
               '<div class="recipe-actions">' +
-                '<button type="button" class="btn btn-secondary btn-sm" id="btnEditRecipe">แก้ไขเมนูและลำดับ</button>' +
+                '<button type="button" class="btn btn-accent btn-sm" id="btnViewInstructions">' +
+                  '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                    '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>' +
+                    '<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>' +
+                  '</svg>' +
+                  'ดูวิธีทำ' +
+                '</button>' +
+                '<button type="button" class="btn btn-secondary btn-sm" id="btnEditRecipe">แก้ไขเมนู</button>' +
                 '<button type="button" class="btn btn-danger-ghost" id="btnDeleteRecipe">ลบเมนู</button>' +
               '</div>' +
             '</div>' +
@@ -1111,6 +1194,10 @@
               '</table>' +
             '</div>' +
           '</div>';
+
+        document.getElementById('btnViewInstructions').addEventListener('click', function () {
+          openInstructionsModal(currentMenu);
+        });
 
         document.getElementById('btnEditRecipe').addEventListener('click', function () {
           openEditForm(currentMenu.id);
@@ -1139,6 +1226,7 @@
           : null;
 
         const initialName = editingMenu ? editingMenu.name : '';
+        const initialInstructions = editingMenu && editingMenu.instructions ? editingMenu.instructions : '';
         const initialIngredients = editingMenu && editingMenu.ingredients && editingMenu.ingredients.length > 0
           ? editingMenu.ingredients.map(function (i) {
               return { name: i.name, weight: i.weight, quantity: i.quantity };
@@ -1156,6 +1244,7 @@
                 '<input type="text" id="menuNameInput" class="input" placeholder="เช่น ข้าวผัดกะเพราไก่, ต้มยำกุ้ง" value="' + escapeHtml(initialName) + '" required>' +
                 '<div class="error-msg" id="menuNameError">กรุณาระบุชื่อเมนูอาหาร</div>' +
               '</div>' +
+
               '<div class="form-group">' +
                 '<div class="section-label">' +
                   '<span>รายการวัตถุดิบ น้ำหนัก และปริมาณ</span>' +
@@ -1171,6 +1260,13 @@
                 '<div class="error-msg" id="ingRowsError">กรุณาระบุวัตถุดิบอย่างน้อย 1 รายการ (ต้องใส่ชื่อวัตถุดิบ และน้ำหนักหรือปริมาณ)</div>' +
                 '<button type="button" class="btn btn-secondary btn-sm" id="btnAddIngredientRow">+ เพิ่มรายการวัตถุดิบ</button>' +
               '</div>' +
+
+              '<div class="form-group">' +
+                '<label class="form-label" for="menuInstructionsInput">ขั้นตอนการทำ / สูตรวิธีทำ (ไม่บังคับ)</label>' +
+                '<textarea id="menuInstructionsInput" class="input" rows="6" placeholder="ระบุขั้นตอนการปรุง เช่น:&#10;1. ตั้งกระทะใส่น้ำมันและผัดกระเทียมพริกจนหอม&#10;2. ใส่เนื้อไก่ลงไปผัดจนสุกทั่ว...">' + escapeHtml(initialInstructions) + '</textarea>' +
+                '<span style="font-size: 12px; color: var(--muted); display: block; margin-top: 4px;">* ข้อความวิธีทำจะไม่แสดงรบกวนในหน้าหลักทันที แต่จะเปิดเป็นหน้าต่างป๊อปอัปเมื่อกดปุ่ม &quot;ดูวิธีทำ&quot;</span>' +
+              '</div>' +
+
               '<div class="form-footer">' +
                 '<button type="button" class="btn btn-secondary" id="btnCancelForm">ยกเลิก</button>' +
                 '<button type="submit" class="btn btn-primary">บันทึกเมนู</button>' +
@@ -1183,6 +1279,7 @@
         const btnCancelForm = document.getElementById('btnCancelForm');
         const recipeForm = document.getElementById('recipeForm');
         const menuNameInput = document.getElementById('menuNameInput');
+        const menuInstructionsInput = document.getElementById('menuInstructionsInput');
         const menuNameError = document.getElementById('menuNameError');
         const ingRowsError = document.getElementById('ingRowsError');
 
@@ -1258,6 +1355,7 @@
           ingRowsError.classList.remove('visible');
 
           const menuName = menuNameInput.value.trim();
+          const instructions = menuInstructionsInput.value.trim();
           let valid = true;
 
           if (!menuName) {
@@ -1290,7 +1388,11 @@
 
           if (!valid) return;
 
-          saveMenuRecord({ name: menuName, ingredients: collectedIngredients }, editingMenuId).then(function () {
+          saveMenuRecord({
+            name: menuName,
+            ingredients: collectedIngredients,
+            instructions: instructions
+          }, editingMenuId).then(function () {
             viewMode = 'detail';
             editingMenuId = null;
             renderMenuList();
@@ -1316,7 +1418,16 @@
         menuSearchInput.focus();
       });
 
-      // Modal Handlers
+      // Modal Instructions Handlers
+      btnCloseInstructionsModal.addEventListener('click', closeInstructionsModal);
+      btnDismissInstructionsModal.addEventListener('click', closeInstructionsModal);
+      instructionsModal.addEventListener('click', function (e) {
+        if (e.target === instructionsModal) {
+          closeInstructionsModal();
+        }
+      });
+
+      // Modal Config Handlers
       function openConfigModal() {
         const current = getEffectiveConfig();
         cfgApiKey.value = current.apiKey || '';
